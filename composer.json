@@ -1,0 +1,18 @@
+{
+    "name": "its/projects-companion-cli",
+    "require": {
+        "symfony/console": "^2.7"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "its",
+            "email": "itsgoingd@luzer.sk"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "ProjectsCliCompanion\\": "app/"
+        }
+    }
+}

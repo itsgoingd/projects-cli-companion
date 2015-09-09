@@ -1,17 +1,12 @@
 <?php namespace ProjectsCliCompanion\Commands;
 
-use ProjectsCliCompanion\Svn\Svn;
-
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class PushCommand extends Command
+class PushCommand extends BaseCommand
 {
-	protected $svn;
-
 	protected function configure()
 	{
 		$this
@@ -32,12 +27,7 @@ class PushCommand extends Command
 
 	protected function execute(InputInterface $input, OutputInterface $output)
 	{
-		$dialog = $this->getHelper('dialog');
-
-		$username = $input->getOption('username');
-		$password = $dialog->askHiddenResponse($output, 'Please enter your password:');
-
-		$this->svn = new Svn($username, $password);
+		$svn = $this->getSvn($this->config, $input, $output);
 
 		$output->write('Retrieving GIT log... ');
 
@@ -60,15 +50,15 @@ class PushCommand extends Command
 				$message = $input->getArgument('workTime') . ' ' . $message;
 			}
 
-			$this->addNewFilesToSvn();
+			$this->addNewFilesToSvn($svn);
 			exec('svn status | grep ^! | awk \'{print " --force "$2}\' | xargs svn rm');
 
-			$this->svn->commit([ '.', 'message' => $message ]);
+			$svn->commit([ '.', 'message' => $message ]);
 
 			$output->writeln('✓');
 		}
 
-		$this->svn->up();
+		$svn->up();
 
 		$this->saveMetadata();
 
@@ -106,28 +96,28 @@ class PushCommand extends Command
 		return array_reverse($commits);
 	}
 
-	protected function addNewFilesToSvn()
+	protected function addNewFilesToSvn($svn)
 	{
 		$gitignore = $this->loadGitignore();
 
-		$svnStatus = $this->svn->status();
+		$svnStatus = $svn->status();
 
 		foreach ($svnStatus as $line) {
 			if (! preg_match('/^\?\s+(?<path>.+)$/', $line, $matches)) {
 				continue;
 			}
 
-			$this->addFileToSvn($matches['path'], $gitignore);
+			$this->addFileToSvn($svn, $matches['path'], $gitignore);
 		}
 	}
 
-	protected function addFileToSvn($path, $gitignore)
+	protected function addFileToSvn($svn, $path, $gitignore)
 	{
 		if ($this->isPathIgnored($path, $gitignore)) {
 			return;
 		}
 
-		$this->svn->add([ 'non-recursive' => null, $path ]);
+		$svn->add([ 'non-recursive' => null, $path ]);
 
 		if (is_dir($path)) {
 			foreach (array_merge(glob("$path/*"), glob("$path/.*")) as $path) {
@@ -135,7 +125,7 @@ class PushCommand extends Command
 					continue;
 				}
 
-				$this->addFileToSvn($path, $gitignore);
+				$this->addFileToSvn($svn, $path, $gitignore);
 			}
 		}
 	}

@@ -1,17 +1,12 @@
 <?php namespace ProjectsCliCompanion\Commands;
 
-use ProjectsCliCompanion\Svn\Svn;
-
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class CheckoutCommand extends Command
+class CheckoutCommand extends BaseCommand
 {
-	protected $svn;
-
 	protected function configure()
 	{
 		$this
@@ -50,16 +45,11 @@ class CheckoutCommand extends Command
 
 		$destinationPath = $input->getOption('path') ?: '.';
 
-		$dialog = $this->getHelper('dialog');
-
-		$username = $input->getOption('username');
-		$password = $dialog->askHiddenResponse($output, 'Please enter your password:');
-
-		$this->svn = new Svn($username, $password);
+		$svn = $this->getSvn($this->config, $input, $output);
 
 		$output->writeln('Downloading files...');
 
-		$this->svn->checkout([ $repositoryUrl, $destinationPath ]);
+		$svn->checkout([ $repositoryUrl, $destinationPath ]);
 
 		$output->writeln('Initializing local repository...');
 

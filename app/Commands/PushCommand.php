@@ -70,6 +70,8 @@ class PushCommand extends Command
 
 		$this->svn->up();
 
+		$this->saveMetadata();
+
 		exec('git checkout master 2>&1');
 	}
 
@@ -95,7 +97,7 @@ class PushCommand extends Command
 					'message'  => ''
 				];
 			} elseif (strpos($line, 'Author:') !== 0 && strpos($line, 'Date:') !== 0 && trim($line) != '') {
-				$commit['message'] .= $line . "\n";
+				$commit['message'] .= trim($line) . "\n";
 			}
 		}
 
@@ -155,5 +157,16 @@ class PushCommand extends Command
 		if ($path == '.git' || $path == '.gitignore') {
 			return true;
 		}
+	}
+
+	protected function saveMetadata()
+	{
+		exec('git rev-parse HEAD', $currentGitRevision);
+
+		$metadata = [
+			'lastCommitedRevision' => $currentGitRevision
+		];
+
+		file_put_contents(getcwd() . '/.svn/.projectsCliCompanion', json_encode($metadata));
 	}
 }

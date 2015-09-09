@@ -2,12 +2,14 @@
 
 require 'vendor/autoload.php';
 
+use ProjectsCliCompanion\Commands;
+
 use Symfony\Component\Console\Application;
 
 $app = new Application();
 
-$app->add(new ProjectsCliCompanion\CheckoutCommand);
-$app->add(new ProjectsCliCompanion\PullCommand);
-$app->add(new ProjectsCliCompanion\PushCommand);
+$app->add(new Commands\CheckoutCommand);
+$app->add(new Commands\PullCommand);
+$app->add(new Commands\PushCommand);
 
 $app->run();

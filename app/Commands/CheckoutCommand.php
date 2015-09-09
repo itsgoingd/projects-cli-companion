@@ -94,7 +94,7 @@ class CheckoutCommand extends Command
 		exec('git rev-parse HEAD', $currentGitRevision);
 
 		$metadata = [
-			'lastCommitedRevision' => $currentGitRevision
+			'lastCommitedRevision' => $currentGitRevision[0]
 		];
 
 		if ($destinationPath[0] != '/') {

@@ -108,7 +108,7 @@ class PushCommand extends Command
 
 	protected function addNewFilesToSvn()
 	{
-		$gitignore = explode("\n", file_get_contents(getcwd() . '/.gitignore'));
+		$gitignore = $this->loadGitignore();
 
 		$svnStatus = $this->svn->status();
 
@@ -140,6 +140,21 @@ class PushCommand extends Command
 		}
 	}
 
+	protected function loadGitignore()
+	{
+		$ignoredPaths = [];
+
+		$lines = explode("\n", file_get_contents(getcwd() . '/.gitignore'));
+
+		foreach ($lines as $line) {
+			if (trim($line) != '' && $line[0] != '#') {
+				$ignoredPaths[] = $line;
+			}
+		}
+
+		return $ignoredPaths;
+	}
+
 	protected function isPathIgnored($path, $gitignore)
 	{
 		foreach ($gitignore as $ignoredPath) {
@@ -164,7 +179,7 @@ class PushCommand extends Command
 		exec('git rev-parse HEAD', $currentGitRevision);
 
 		$metadata = [
-			'lastCommitedRevision' => $currentGitRevision
+			'lastCommitedRevision' => $currentGitRevision[0]
 		];
 
 		file_put_contents(getcwd() . '/.svn/.projectsCliCompanion', json_encode($metadata));

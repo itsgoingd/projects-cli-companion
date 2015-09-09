@@ -1,5 +1,7 @@
 <?php namespace ProjectsCliCompanion\Commands;
 
+use ProjectsCliCompanion\Svn\Svn;
+
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -8,6 +10,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class PullCommand extends Command
 {
+	protected $svn;
+
 	protected function configure()
 	{
 		$this
@@ -25,11 +29,14 @@ class PullCommand extends Command
 	{
 		$dialog = $this->getHelper('dialog');
 
+		$username = $input->getOption('username');
 		$password = $dialog->askHiddenResponse($output, 'Please enter your password:');
+
+		$this->svn = new Svn($username, $password);
 
 		$output->write('Retrieving SVN log...');
 
-		exec('svn log -r BASE:HEAD --password=' . escapeshellarg($password), $svnLog);
+		$svnLog = $this->svn->log([ 'revision' => 'BASE:HEAD' ]);
 
 		$output->writeln('✓');
 
@@ -44,7 +51,7 @@ class PullCommand extends Command
 			$output->write("Importing commit {$commit['revision']}... ");
 			$output->write('updating from svn... ');
 
-			exec('svn up -r ' . escapeshellarg($commit['revision']) . ' --password=' . escapeshellarg($password));
+			$this->svn->up([ 'r' => $commit['revision'] ]);
 
 			$output->write('commiting to git... ');
 

@@ -1,5 +1,7 @@
 <?php namespace ProjectsCliCompanion\Commands;
 
+use ProjectsCliCompanion\Svn\Svn;
+
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -8,6 +10,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class PushCommand extends Command
 {
+	protected $svn;
+
 	protected function configure()
 	{
 		$this
@@ -30,7 +34,10 @@ class PushCommand extends Command
 	{
 		$dialog = $this->getHelper('dialog');
 
+		$username = $input->getOption('username');
 		$password = $dialog->askHiddenResponse($output, 'Please enter your password:');
+
+		$this->svn = new Svn($username, $password);
 
 		$output->write('Retrieving GIT log... ');
 
@@ -56,24 +63,12 @@ class PushCommand extends Command
 			$this->addNewFilesToSvn();
 			exec('svn status | grep ^! | awk \'{print " --force "$2}\' | xargs svn rm');
 
-			$cmd = 'svn commit . --message=' . escapeshellarg($message) . ' --password=' . escapeshellarg($password);
-
-			if ($username = $input->getOption('username')) {
-				$cmd .= ' --username=' . escapeshellarg($username);
-			}
-
-			exec($cmd);
+			$this->svn->commit([ '.', 'message' => $message ]);
 
 			$output->writeln('✓');
 		}
 
-		$cmd = 'svn up --password=' . escapeshellarg($password);
-
-		if ($username = $input->getOption('username')) {
-			$cmd .= ' --username=' . escapeshellarg($username);
-		}
-
-		exec($cmd);
+		$this->svn->up();
 
 		exec('git checkout master 2>&1');
 	}
@@ -113,7 +108,7 @@ class PushCommand extends Command
 	{
 		$gitignore = explode("\n", file_get_contents(getcwd() . '/.gitignore'));
 
-		exec('svn status', $svnStatus);
+		$svnStatus = $this->svn->status();
 
 		foreach ($svnStatus as $line) {
 			if (! preg_match('/^\?\s+(?<path>.+)$/', $line, $matches)) {
@@ -130,7 +125,7 @@ class PushCommand extends Command
 			return;
 		}
 
-		exec('svn add --non-recursive ' . escapeshellarg($path));
+		$this->svn->add([ 'non-recursive' => null, $path ]);
 
 		if (is_dir($path)) {
 			foreach (array_merge(glob("$path/*"), glob("$path/.*")) as $path) {

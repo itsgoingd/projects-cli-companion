@@ -29,7 +29,11 @@ class Svn
 		}
 
 		foreach ($arguments as $key => $argument) {
-			$commandLine .= is_string($key) ? " --$key=" : ' ';
+			$commandLine .= ' ';
+
+			if (is_string($key)) {
+				$commandLine .= $argument === null ? "--{$key}" : "--{$key}=";
+			}
 
 			if ($argument !== null) {
 				$commandLine .= escapeshellarg($argument);

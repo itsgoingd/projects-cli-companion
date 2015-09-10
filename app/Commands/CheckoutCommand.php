@@ -55,6 +55,8 @@ class CheckoutCommand extends BaseCommand
 
 		$this->createLocalGitRepository($destinationPath);
 
+		$this->saveMetadata($destinationPath, $projectName);
+
 		$output->writeln('Done!');
 	}
 
@@ -70,8 +72,6 @@ class CheckoutCommand extends BaseCommand
 
 		$cmd = 'git commit --message "Hello world"';
 		exec($cmd);
-
-		$this->saveMetadata($destinationPath);
 	}
 
 	protected function createDefaultGitignore($destinationPath)
@@ -79,18 +79,19 @@ class CheckoutCommand extends BaseCommand
 		file_put_contents("{$destinationPath}/.gitignore", ".svn\n");
 	}
 
-	protected function saveMetadata($destinationPath)
+	protected function saveMetadata($destinationPath, $projectName)
 	{
 		exec('git rev-parse HEAD', $currentGitRevision);
 
 		$metadata = [
-			'lastCommitedRevision' => $currentGitRevision[0]
+			'lastCommitedRevision' => $currentGitRevision[0],
+			'projectName' => $projectName
 		];
 
 		if ($destinationPath[0] != '/') {
 			$destinationPath = getcwd() . "/{$destinationPath}";
 		}
 
-		file_put_contents(getcwd() . "/{$destinationPath}/.svn/.projectsCliCompanion", json_encode($metadata));
+		file_put_contents("/{$destinationPath}/.svn/.projectsCliCompanion", json_encode($metadata));
 	}
 }

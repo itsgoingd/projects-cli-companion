@@ -87,9 +87,9 @@ class PullCommand extends BaseCommand
 	{
 		exec('git rev-parse HEAD', $currentGitRevision);
 
-		$metadata = [
-			'lastCommitedRevision' => $currentGitRevision[0]
-		];
+		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
+
+		$metadata['lastCommitedRevision'] = $currentGitRevision[0];
 
 		file_put_contents(getcwd() . '/.svn/.projectsCliCompanion', json_encode($metadata));
 	}

@@ -2,6 +2,7 @@
 
 use ProjectsCliCompanion\Config\Config;
 use ProjectsCliCompanion\Svn\Svn;
+use ProjectsCliCompanion\Web\Web;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -27,5 +28,16 @@ abstract class BaseCommand extends Command
 		}
 
 		return new Svn($username, $password);
+	}
+
+	protected function getWeb(Config $config, InputInterface $input, OutputInterface $output)
+	{
+		$username = $config->get('username', $input->getOption('username'));
+
+		if (! $password = $config->get('password')) {
+			$password = $this->getHelper('dialog')->askHiddenResponse($output, 'Please enter your password:');
+		}
+
+		return new Web($username, $password);
 	}
 }

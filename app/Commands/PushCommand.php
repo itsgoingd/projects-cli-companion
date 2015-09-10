@@ -58,6 +58,10 @@ class PushCommand extends BaseCommand
 			$output->writeln('✓');
 		}
 
+		$web = $this->getWeb($this->config, $input, $output);
+
+		$this->postTicketsCommentsForCommits($web, $commitsToPush);
+
 		$svn->up();
 
 		$this->saveMetadata();
@@ -168,10 +172,39 @@ class PushCommand extends BaseCommand
 	{
 		exec('git rev-parse HEAD', $currentGitRevision);
 
-		$metadata = [
-			'lastCommitedRevision' => $currentGitRevision[0]
-		];
+		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
+
+		$metadata['lastCommitedRevision'] = $currentGitRevision[0];
 
 		file_put_contents(getcwd() . '/.svn/.projectsCliCompanion', json_encode($metadata));
+	}
+
+	protected function postTicketsCommentsForCommits($web, $commits)
+	{
+		$comments = [];
+
+		foreach ($commits as $commit) {
+			if (! preg_match('/(?<keyword>[A-Za-z]+)?\s*#(?<ticketId>\d+)/', $commit['message'], $matches)) {
+				continue;
+			}
+
+			$ticketId = $matches['ticketId'];
+
+			if (! isset($comments[$ticketId])) {
+				$comments[$ticketId] = [ 'message' => '', 'status' => null ];
+			}
+
+			if ($matches['keyword'] == 'done' || $matches['keyword'] == 'fixed' || $matches['keyword'] == 'fixes') {
+				$comments[$ticketId]['status'] = 'done';
+			}
+
+			$comments[$ticketId]['message'] .= '- ' . $commit['message'] . "\n";
+		}
+
+		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
+
+		foreach ($comments as $ticketId => $comment) {
+			$web->postTicketComment($metadata['projectName'], $ticketId, '', $comment['message'], $comment['status']);
+		}
 	}
 }

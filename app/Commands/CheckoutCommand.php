@@ -76,7 +76,19 @@ class CheckoutCommand extends BaseCommand
 
 	protected function createDefaultGitignore($destinationPath)
 	{
-		file_put_contents("{$destinationPath}/.gitignore", ".svn\n");
+		if ($destinationPath[0] != '/') {
+			$destinationPath = getcwd() . "/{$destinationPath}";
+		}
+
+		if (file_exists("{$destinationPath}/.gitignore")) {
+			$gitignore = file_get_contents("{$destinationPath}/.gitignore");
+		} else {
+			$gitignore = '';
+		}
+
+		$gitignore .= "\n.svn\n";
+
+		file_put_contents("{$destinationPath}/.gitignore", $gitignore);
 	}
 
 	protected function saveMetadata($destinationPath, $projectName)

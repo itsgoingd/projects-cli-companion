@@ -1,6 +1,7 @@
 <?php namespace ProjectsCliCompanion\Commands;
 
 use ProjectsCliCompanion\Config\Config;
+use ProjectsCliCompanion\Git\Git;
 use ProjectsCliCompanion\Svn\Svn;
 use ProjectsCliCompanion\Web\Web;
 
@@ -17,6 +18,11 @@ abstract class BaseCommand extends Command
 		$this->config = $config;
 
 		parent::__construct();
+	}
+
+	protected function getGit()
+	{
+		return new Git();
 	}
 
 	protected function getSvn(Config $config, InputInterface $input, OutputInterface $output)

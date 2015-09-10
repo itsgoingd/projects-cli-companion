@@ -46,6 +46,7 @@ class CheckoutCommand extends BaseCommand
 		$destinationPath = $input->getOption('path') ?: '.';
 
 		$svn = $this->getSvn($this->config, $input, $output);
+		$git = $this->getGit();
 
 		$output->writeln('Downloading files...');
 
@@ -53,25 +54,22 @@ class CheckoutCommand extends BaseCommand
 
 		$output->writeln('Initializing local repository...');
 
-		$this->createLocalGitRepository($destinationPath);
+		$this->createLocalGitRepository($git, $destinationPath);
 
-		$this->saveMetadata($destinationPath, $projectName);
+		$this->saveMetadata($git, $destinationPath, $projectName);
 
 		$output->writeln('Done!');
 	}
 
-	protected function createLocalGitRepository($destinationPath)
+	protected function createLocalGitRepository($git, $destinationPath)
 	{
-		$cmd = 'git init ' . escapeshellarg($destinationPath);
-		exec($cmd);
+		$git->init([ $destinationPath ]);
 
 		$this->createDefaultGitignore($destinationPath);
 
-		$cmd = 'git add .';
-		exec($cmd);
+		$git->add([ '.' ]);
 
-		$cmd = 'git commit --message "Hello world"';
-		exec($cmd);
+		$git->commit([ 'message' => 'Hello world' ]);
 	}
 
 	protected function createDefaultGitignore($destinationPath)
@@ -91,12 +89,10 @@ class CheckoutCommand extends BaseCommand
 		file_put_contents("{$destinationPath}/.gitignore", $gitignore);
 	}
 
-	protected function saveMetadata($destinationPath, $projectName)
+	protected function saveMetadata($git, $destinationPath, $projectName)
 	{
-		exec('git rev-parse HEAD', $currentGitRevision);
-
 		$metadata = [
-			'lastCommitedRevision' => $currentGitRevision[0],
+			'lastCommitedRevision' => $git->getLastCommitHash(),
 			'projectName' => $projectName
 		];
 

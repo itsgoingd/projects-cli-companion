@@ -23,6 +23,7 @@ class PullCommand extends BaseCommand
 	protected function execute(InputInterface $input, OutputInterface $output)
 	{
 		$svn = $this->getSvn($this->config, $input, $output);
+		$git = $this->getGit();
 
 		$output->write('Retrieving SVN log...');
 
@@ -45,16 +46,16 @@ class PullCommand extends BaseCommand
 
 			$output->write('commiting to git... ');
 
-			exec('git add .');
+			$git->add([ '.' ]);
 
 			$message = "[IMPORT] [{$commit['author']}] {$commit['message']} (" . date('d.m.Y H:i', $commit['date']) . ')';
 
-			exec('git commit . --message ' . escapeshellarg($message));
+			$git->commit([ 'message' => $message ]);
 
 			$output->writeln('✓');
 		}
 
-		$this->saveMetadata();
+		$this->saveMetadata($git);
 	}
 
 	protected function parseSvnLog($input)
@@ -83,13 +84,11 @@ class PullCommand extends BaseCommand
 		return $log;
 	}
 
-	protected function saveMetadata()
+	protected function saveMetadata($git)
 	{
-		exec('git rev-parse HEAD', $currentGitRevision);
-
 		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
 
-		$metadata['lastCommitedRevision'] = $currentGitRevision[0];
+		$metadata['lastCommitedRevision'] = $git->getLastRevisionHash();
 
 		file_put_contents(getcwd() . '/.svn/.projectsCliCompanion', json_encode($metadata));
 	}

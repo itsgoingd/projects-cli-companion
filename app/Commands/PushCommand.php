@@ -28,10 +28,11 @@ class PushCommand extends BaseCommand
 	protected function execute(InputInterface $input, OutputInterface $output)
 	{
 		$svn = $this->getSvn($this->config, $input, $output);
+		$git = $this->getGit();
 
 		$output->write('Retrieving GIT log... ');
 
-		$commitsToPush = $this->getNotPushedCommits();
+		$commitsToPush = $this->getNotPushedCommits($git);
 
 		$output->writeln('✓ (' . count($commitsToPush) . ' commits)');
 		$output->writeln('');
@@ -40,7 +41,7 @@ class PushCommand extends BaseCommand
 			$output->write("Pushing commit {$commit['revision']}... ");
 			$output->write('checking out of git... ');
 
-			exec('git checkout ' . escapeshellarg($commit['revision']) . ' 2>&1');
+			$git->checkout([ $commit['revision'] ]);
 
 			$output->write('commiting to svn... ');
 
@@ -64,16 +65,16 @@ class PushCommand extends BaseCommand
 
 		$svn->up();
 
-		$this->saveMetadata();
+		$this->saveMetadata($git);
 
-		exec('git checkout master 2>&1');
+		$git->checkout([ 'master' ]);
 	}
 
-	protected function getNotPushedCommits()
+	protected function getNotPushedCommits($git)
 	{
 		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
 
-		exec('git log', $gitLog);
+		$gitLog = $git->log();
 
 		$commits = [];
 		$commit = [];
@@ -168,13 +169,11 @@ class PushCommand extends BaseCommand
 		}
 	}
 
-	protected function saveMetadata()
+	protected function saveMetadata($git)
 	{
-		exec('git rev-parse HEAD', $currentGitRevision);
-
 		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
 
-		$metadata['lastCommitedRevision'] = $currentGitRevision[0];
+		$metadata['lastCommitedRevision'] = $git->getLastCommitHash();
 
 		file_put_contents(getcwd() . '/.svn/.projectsCliCompanion', json_encode($metadata));
 	}

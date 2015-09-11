@@ -20,11 +20,11 @@ class SetupCommand extends BaseCommand
 		$output->writeln('Configuration is stored in "~/.projectsCliCompanion".');
 		$output->writeln('');
 
+		$serverName = $this->getHelper('dialog')->ask($output, "Please enter projects server name (optional):\n");
 		$username = $this->getHelper('dialog')->ask($output, "Please enter your username (optional):\n");
-
 		$password = $this->getHelper('dialog')->askHiddenResponse($output, "Please enter your password (optional, note that password is stored in plaintext in the configuration file):\n");
 
-		$metadata = compact('username', 'password');
+		$metadata = compact('serverName', 'username', 'password');
 
 		file_put_contents(getenv('HOME') . '/.projectsCliCompanion', json_encode($metadata));
 

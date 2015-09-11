@@ -29,6 +29,12 @@ class CheckoutCommand extends BaseCommand
 				'Destination path, default to current directory.'
 			)
 			->addOption(
+				'serverName',
+				's',
+				InputOption::VALUE_OPTIONAL,
+				'Projects server name.'
+			)
+			->addOption(
 				'username',
 				'u',
 				InputOption::VALUE_OPTIONAL,
@@ -38,10 +44,11 @@ class CheckoutCommand extends BaseCommand
 
 	protected function execute(InputInterface $input, OutputInterface $output)
 	{
+		$serverName = $input->getArgument('serverName') ?: $this->config->get('serverName');
 		$projectName = $input->getArgument('projectName');
 		$repositoryName = $input->getArgument('repositoryName') ?: 'code';
 
-		$repositoryUrl = "svn://projects.kbs-development.com/1/{$projectName}/svn/{$repositoryName}";
+		$repositoryUrl = "svn://$serverName/1/{$projectName}/svn/{$repositoryName}";
 
 		$destinationPath = $input->getOption('path') ?: '.';
 

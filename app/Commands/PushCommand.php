@@ -130,6 +130,10 @@ class PushCommand extends BaseCommand
 					continue;
 				}
 
+				if (is_dir($path)) {
+					$path = rtrim($path, '/') . '/';
+				}
+
 				$this->addFileToSvn($svn, $path, $gitignore);
 			}
 		}

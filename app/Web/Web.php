@@ -4,15 +4,15 @@ use Goutte\Client;
 
 class Web
 {
-	protected $baseUrl = 'https://projects.kbs-development.com/';
-
+	protected $baseUrl;
 	protected $username;
 	protected $password;
 
 	protected $client;
 
-	public function __construct($username = null, $password = null)
+	public function __construct($serverName, $username = null, $password = null)
 	{
+		$this->baseUrl = "https://{$serverName}/";
 		$this->username = $username;
 		$this->password = $password;
 

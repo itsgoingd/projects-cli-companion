@@ -28,6 +28,9 @@ Use `pull` command to pull in changes from remote SVN repository and import them
 Use `push` command to push out changes from local GIT repository to remote SVN repository, you can specify the work time
 as an argument. This command also respects `.gitignore` entries when commiting the files to SVN.
 
+You can also reference a ticket in a commit message using `#ticket_number` (eg. `Fixed broken layout (#42).`) and the commit
+message will be automatically posted as a comment in the ticket.
+
 ## Licence
 
 Copyright (c) 2015 Miroslav Rigler

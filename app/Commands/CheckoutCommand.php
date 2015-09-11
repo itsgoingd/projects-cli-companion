@@ -57,7 +57,15 @@ class CheckoutCommand extends BaseCommand
 
 		$output->write('<info>Downloading files... </info>');
 
-		$svn->checkout([ $repositoryUrl, $destinationPath ]);
+		$svnOutput = $svn->checkout([ $repositoryUrl, $destinationPath ]);
+
+		if (isset($svnOutput[0]) && strpos($svnOutput[0], 'svn: E670008:') === 0) {
+			$output->writeln('<error>Unable to connect to the svn repository, please check if the specified server, project and repository names are correct.</error>');
+			$output->writeln("<error> - server name: {$serverName}</error>");
+			$output->writeln("<error> - project name: {$projectName}</error>");
+			$output->writeln("<error> - repository name: {$repositoryName}</error>");
+			return;
+		}
 
 		$output->writeln('<info>✓</info>');
 

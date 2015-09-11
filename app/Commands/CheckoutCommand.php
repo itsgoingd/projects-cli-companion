@@ -11,7 +11,7 @@ class CheckoutCommand extends BaseCommand
 	{
 		$this
 			->setName('checkout')
-			->setDescription('Checkout an existing project.')
+			->setDescription('Checkout a project from the remote server.')
 			->addArgument(
 				'projectName',
 				InputArgument::REQUIRED,
@@ -44,7 +44,7 @@ class CheckoutCommand extends BaseCommand
 
 	protected function execute(InputInterface $input, OutputInterface $output)
 	{
-		$serverName = $input->getArgument('serverName') ?: $this->config->get('serverName');
+		$serverName = $input->getOption('serverName') ?: $this->config->get('serverName');
 		$projectName = $input->getArgument('projectName');
 		$repositoryName = $input->getArgument('repositoryName') ?: 'code';
 
@@ -55,17 +55,21 @@ class CheckoutCommand extends BaseCommand
 		$svn = $this->getSvn($this->config, $input, $output);
 		$git = $this->getGit();
 
-		$output->writeln('Downloading files...');
+		$output->write('<info>Downloading files... </info>');
 
 		$svn->checkout([ $repositoryUrl, $destinationPath ]);
 
-		$output->writeln('Initializing local repository...');
+		$output->writeln('<info>✓</info>');
+
+		$output->write('<info>Initializing repository... </info>');
 
 		$this->createLocalGitRepository($git, $destinationPath);
 
+		$output->writeln('<info>✓</info>');
+
 		$this->saveMetadata($git, $destinationPath, $projectName);
 
-		$output->writeln('Done!');
+		$output->writeln('<info>Enjoy working on your new project!</info>');
 	}
 
 	protected function createLocalGitRepository($git, $destinationPath)

@@ -11,7 +11,7 @@ class PullCommand extends BaseCommand
 	{
 		$this
 			->setName('pull')
-			->setDescription('Pull in remote changes.')
+			->setDescription('Pull in changes from remote server.')
 			->addOption(
 				'username',
 				'u',
@@ -25,26 +25,26 @@ class PullCommand extends BaseCommand
 		$svn = $this->getSvn($this->config, $input, $output);
 		$git = $this->getGit();
 
-		$output->write('Retrieving SVN log...');
+		$output->write('<info>Retrieving remote changes...</info>');
 
 		$svnLog = $svn->log([ 'revision' => 'BASE:HEAD' ]);
 
-		$output->writeln('✓');
+		$output->writeln('<info>✓</info>');
 
-		$output->write('Parsing SVN log...');
+		$output->write('<info>Processing remote changes...</info>');
 
 		$svnLog = $this->parseSvnLog($svnLog);
 
-		$output->writeln('✓ (' . count($svnLog) . ' commits)');
+		$output->writeln('<info>✓ (' . count($svnLog) . ' commits)</info>');
 		$output->writeln('');
 
 		foreach ($svnLog as $commit) {
 			$output->write("Importing commit {$commit['revision']}... ");
-			$output->write('updating from svn... ');
+			$output->write('downloading files... ');
 
 			$svn->up([ 'r' => $commit['revision'] ]);
 
-			$output->write('commiting to git... ');
+			$output->write('committing... ');
 
 			$git->add([ '.' ]);
 
@@ -88,7 +88,7 @@ class PullCommand extends BaseCommand
 	{
 		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
 
-		$metadata['lastCommitedRevision'] = $git->getLastRevisionHash();
+		$metadata['lastCommitedRevision'] = $git->getLastCommitHash();
 
 		file_put_contents(getcwd() . '/.svn/.projectsCliCompanion', json_encode($metadata));
 	}

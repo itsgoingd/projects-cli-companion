@@ -11,7 +11,7 @@ class PushCommand extends BaseCommand
 	{
 		$this
 			->setName('push')
-			->setDescription('Push out changes to remote repository.')
+			->setDescription('Push out changes to remote server.')
 			->addArgument(
 				'workTime',
 				InputArgument::REQUIRED,
@@ -30,20 +30,20 @@ class PushCommand extends BaseCommand
 		$svn = $this->getSvn($this->config, $input, $output);
 		$git = $this->getGit();
 
-		$output->write('Retrieving GIT log... ');
+		$output->write('<info>Retrieving changes to push... </info>');
 
 		$commitsToPush = $this->getNotPushedCommits($git);
 
-		$output->writeln('✓ (' . count($commitsToPush) . ' commits)');
+		$output->writeln('<info>✓ (' . count($commitsToPush) . ' commits)</info>');
 		$output->writeln('');
 
 		foreach ($commitsToPush as $i => $commit) {
 			$output->write("Pushing commit {$commit['revision']}... ");
-			$output->write('checking out of git... ');
+			$output->write('checking out... ');
 
 			$git->checkout([ $commit['revision'] ]);
 
-			$output->write('commiting to svn... ');
+			$output->write('commiting... ');
 
 			$message = $commit['message'];
 

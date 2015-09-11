@@ -38,7 +38,7 @@ abstract class BaseCommand extends Command
 
 	protected function getWeb(Config $config, InputInterface $input, OutputInterface $output)
 	{
-		$serverName = $config->get('serverName', $input->getOption('serverName'));
+		$serverName = $config->get('serverName');
 		$username = $config->get('username', $input->getOption('username'));
 
 		if (! $password = $config->get('password')) {

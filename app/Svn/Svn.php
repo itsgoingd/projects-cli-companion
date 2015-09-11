@@ -40,6 +40,8 @@ class Svn
 			}
 		}
 
+		$commandLine .= ' 2>&1';
+
 		exec($commandLine, $output);
 
 		return $output;

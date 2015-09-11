@@ -6,7 +6,7 @@ reuse the code, but the tool itself is not meant for public use.**
 
 ## Installation
 
-You can download [latest version as an executable phar archive](http://abyss.shadowfall.eu/projects-cli-companion).
+You can download [latest version as an executable phar archive](http://abyss.shadowfall.eu/projects-cli-companion.phar).
 
 You need to set up the tool after downloading via `php projects-cli-companion.phar setup`.
 

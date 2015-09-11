@@ -1,19 +1,19 @@
 Projects CLI Companion
 ======================
 
-**This repository contains a CLI tool for working with an internal proejcts management system, feel free to browse and
+**This repository contains a CLI tool for working with an internal projects management system, feel free to browse and
 reuse the code, but the tool itself is not meant for public use.**
 
 ## Installation
 
 You can download [latest version as an executable phar archive](http://abyss.shadowfall.eu/projects-cli-companion).
 
-You need to set up the tool after downloading via `php projects-cli-companion.phat setup`.
+You need to set up the tool after downloading via `php projects-cli-companion.phar setup`.
 
 ## Usage
 
-This tool allows you to easily use a modern version control system with projects management server by creating a local
-GIT repository and providing tools for keeping it synchronized with remote SVN repository.
+This tool allows you to easily use a modern version control system with our projects management server by creating a local
+GIT repository and providing tools for keeping it synchronized with the remote SVN repository.
 
 ### Checkout
 

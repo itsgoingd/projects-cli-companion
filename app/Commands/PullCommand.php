@@ -25,13 +25,13 @@ class PullCommand extends BaseCommand
 		$svn = $this->getSvn($this->config, $input, $output);
 		$git = $this->getGit();
 
-		$output->write('<info>Retrieving remote changes...</info>');
+		$output->write('<info>Retrieving remote changes... </info>');
 
 		$svnLog = $svn->log([ 'revision' => 'BASE:HEAD' ]);
 
 		$output->writeln('<info>✓</info>');
 
-		$output->write('<info>Processing remote changes...</info>');
+		$output->write('<info>Processing remote changes... </info>');
 
 		$svnLog = $this->parseSvnLog($svnLog);
 

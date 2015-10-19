@@ -59,7 +59,5 @@ class Web
 			'comment'       => $message,
 			'comment_type'  => 'markdown'
 		]);
-
-		echo((string) $this->response());
 	}
 }

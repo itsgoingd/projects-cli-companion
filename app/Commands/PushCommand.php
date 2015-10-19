@@ -37,6 +37,8 @@ class PushCommand extends BaseCommand
 		$output->writeln('<info>✓ (' . count($commitsToPush) . ' commits)</info>');
 		$output->writeln('');
 
+		$gitignore = $this->loadGitignore();
+
 		foreach ($commitsToPush as $i => $commit) {
 			$output->write("Pushing commit {$commit['revision']}... ");
 			$output->write('checking out... ');
@@ -51,7 +53,7 @@ class PushCommand extends BaseCommand
 				$message = $input->getArgument('workTime') . ' ' . $message;
 			}
 
-			$this->addNewFilesToSvn($svn);
+			$this->addNewFilesToSvn($svn, $gitignore);
 			exec('svn status | grep ^! | awk \'{print " --force "$2}\' | xargs svn rm');
 
 			$svn->commit([ '.', 'message' => $message ]);
@@ -101,10 +103,8 @@ class PushCommand extends BaseCommand
 		return array_reverse($commits);
 	}
 
-	protected function addNewFilesToSvn($svn)
+	protected function addNewFilesToSvn($svn, $gitignore)
 	{
-		$gitignore = $this->loadGitignore();
-
 		$svnStatus = $svn->status();
 
 		foreach ($svnStatus as $line) {

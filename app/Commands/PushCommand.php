@@ -122,6 +122,12 @@ class PushCommand extends BaseCommand
 			return;
 		}
 
+		// using @ when adding a file in svn specifies the peg revision, we need to add an extra @ at the end of the file
+		// names containing @ for them to be added correctly
+		if (strpos($path, '@') !== false) {
+			$path .= '@';
+		}
+
 		$svn->add([ 'non-recursive' => null, $path ]);
 
 		if (is_dir($path)) {

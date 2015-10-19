@@ -42,7 +42,7 @@ class PullCommand extends BaseCommand
 			$output->write("Importing commit {$commit['revision']}... ");
 			$output->write('downloading files... ');
 
-			$svn->up([ 'r' => $commit['revision'] ]);
+			$svn->up([ 'revision' => $commit['revision'] ]);
 
 			$output->write('committing... ');
 

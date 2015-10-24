@@ -16,6 +16,20 @@ class Svn
 		return call_user_func_array([ $this, 'execute' ], array_merge([ $name ], $arguments));
 	}
 
+	public function getCurrentRevision()
+	{
+		if (preg_match('/^Revision: (?<revision>\d+)/m', implode("\n", $this->info()), $matches)) {
+			return $matches['revision'];
+		}
+	}
+
+	public function getLatestRevision()
+	{
+		if (preg_match('/^Revision: (?<revision>\d+)/m', implode("\n", $this->info([ 'revision' => 'HEAD' ])), $matches)) {
+			return $matches['revision'];
+		}
+	}
+
 	public function execute($command, $arguments = [])
 	{
 		$commandLine = "svn $command";

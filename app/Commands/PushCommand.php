@@ -30,6 +30,12 @@ class PushCommand extends BaseCommand
 		$svn = $this->getSvn($this->config, $input, $output);
 		$git = $this->getGit();
 
+		if ($svn->getCurrentRevision() != $svn->getLatestRevision()) {
+			$output->writeln('<error>Please use `projects pull` to pull in new remote changes first.</error>');
+
+			return;
+		}
+
 		$output->write('<info>Retrieving changes to push... </info>');
 
 		$commitsToPush = $this->getNotPushedCommits($git);
@@ -39,26 +45,10 @@ class PushCommand extends BaseCommand
 
 		$gitignore = $this->loadGitignore();
 
-		foreach ($commitsToPush as $i => $commit) {
-			$output->write("Pushing commit {$commit['revision']}... ");
-			$output->write('checking out... ');
-
-			$git->checkout([ $commit['revision'] ]);
-
-			$output->write('commiting... ');
-
-			$message = $commit['message'];
-
-			if ($i == count($commitsToPush) - 1) {
-				$message = $input->getArgument('workTime') . ' ' . $message;
-			}
-
-			$this->addNewFilesToSvn($svn, $gitignore);
-			exec('svn status | grep ^! | awk \'{print " --force "$2}\' | xargs svn rm');
-
-			$svn->commit([ '.', 'message' => $message ]);
-
-			$output->writeln('✓');
+		if ($svn->getCurrentRevision() == $this->getLastPushedRemoteRevision()) {
+			$this->pushAll($commitsToPush, $gitignore, $svn, $git, $input, $output);
+		} else {
+			$this->pushMerged($commitsToPush, $gitignore, $svn, $git, $input, $output);
 		}
 
 		$web = $this->getWeb($this->config, $input, $output);
@@ -67,9 +57,50 @@ class PushCommand extends BaseCommand
 
 		$svn->up();
 
-		$this->saveMetadata($git);
+		$this->saveMetadata($git, $svn);
+	}
+
+	protected function pushAll($commitsToPush, $gitignore, $svn, $git, $input, $output)
+	{
+		foreach ($commitsToPush as $i => $commit) {
+			$output->write("Pushing commit {$commit['revision']}... ");
+			$output->write('checking out... ');
+
+			$git->checkout([ $commit['revision'] ]);
+
+			$output->write('committing... ');
+
+			if ($i == count($commitsToPush) - 1) {
+				$message = $input->getArgument('workTime') . ' ' . $commit['message'];
+			}
+
+			$this->addNewFilesToSvn($svn, $gitignore);
+			$this->removeDeletedFilesFromSvn();
+
+			$svn->commit([ '.', 'message' => $commit['message'] ]);
+
+			$output->writeln('✓');
+		}
 
 		$git->checkout([ 'master' ]);
+	}
+
+	protected function pushMerged($commitsToPush, $gitignore, $svn, $git, $input, $output)
+	{
+		$message = $input->getArgument('workTime') . ' ';
+
+		foreach ($commitsToPush as $i => $commit) {
+			$message .= "{$commit['message']}\n";
+		}
+
+		$output->write("Pushing commits... committing... ");
+
+		$this->addNewFilesToSvn($svn, $gitignore);
+		$this->removeDeletedFilesFromSvn();
+
+		$svn->commit([ '.', 'message' => $message ]);
+
+		$output->writeln('✓');
 	}
 
 	protected function getNotPushedCommits($git)
@@ -85,7 +116,7 @@ class PushCommand extends BaseCommand
 			if (preg_match('/^commit (?<revision>.+)$/', $line, $matches)) {
 				$commits[] = $commit;
 
-				if ($matches['revision'] == $metadata['lastCommitedRevision']) {
+				if ($matches['revision'] == $metadata['lastPushedRevision']) {
 					break;
 				}
 
@@ -100,7 +131,14 @@ class PushCommand extends BaseCommand
 
 		array_shift($commits);
 
-		return array_reverse($commits);
+		$commits = array_reverse($commits);
+
+		$commits = array_filter($commits, function($commit)
+		{
+			return strpos($commit['message'], '[IMPORT]') !== 0;
+		});
+
+		return $commits;
 	}
 
 	protected function addNewFilesToSvn($svn, $gitignore)
@@ -145,6 +183,11 @@ class PushCommand extends BaseCommand
 		}
 	}
 
+	protected function removeDeletedFilesFromSvn()
+	{
+		exec('svn status | grep ^! | awk \'{print " --force "$2}\' | xargs svn rm');
+	}
+
 	protected function loadGitignore()
 	{
 		$ignoredPaths = [];
@@ -179,13 +222,21 @@ class PushCommand extends BaseCommand
 		}
 	}
 
-	protected function saveMetadata($git)
+	protected function saveMetadata($git, $svn)
 	{
 		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
 
-		$metadata['lastCommitedRevision'] = $git->getLastCommitHash();
+		$metadata['lastPushedRevision'] = $git->getLastCommitHash();
+		$metadata['lastPushedRemoteRevision'] = $svn->getCurrentRevision();
 
 		file_put_contents(getcwd() . '/.svn/.projectsCliCompanion', json_encode($metadata));
+	}
+
+	protected function getLastPushedRemoteRevision()
+	{
+		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
+
+		return $metadata['lastPushedRemoteRevision'];
 	}
 
 	protected function postTicketsCommentsForCommits($web, $commits)

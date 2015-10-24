@@ -42,7 +42,7 @@ class PullCommand extends BaseCommand
 			$output->write("Importing commit {$commit['revision']}... ");
 			$output->write('downloading files... ');
 
-			$svn->up([ 'revision' => $commit['revision'] ]);
+			$svn->up([ 'revision' => $commit['revision'], 'accept' => 'postpone' ]);
 
 			$output->write('committing... ');
 
@@ -55,7 +55,20 @@ class PullCommand extends BaseCommand
 			$output->writeln('✓');
 		}
 
-		$this->saveMetadata($git);
+		$this->reportMergeConflicts($svn, $output);
+	}
+
+	protected function reportMergeConflicts($svn, $output)
+	{
+		if (! preg_match_all('/^C\s+(?<filename>.+)$/m', implode("\n", $svn->status()), $conflicts)) {
+			return;
+		}
+
+		$output->writeln('<error>Following merge conflicts need to be resolved:</error>');
+
+		foreach ($conflicts['filename'] as $fileName) {
+			$output->writeln("\t{$fileName}");
+		}
 	}
 
 	protected function parseSvnLog($input)
@@ -82,14 +95,5 @@ class PullCommand extends BaseCommand
 		array_shift($log);
 
 		return $log;
-	}
-
-	protected function saveMetadata($git)
-	{
-		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
-
-		$metadata['lastCommitedRevision'] = $git->getLastCommitHash();
-
-		file_put_contents(getcwd() . '/.svn/.projectsCliCompanion', json_encode($metadata));
 	}
 }

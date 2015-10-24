@@ -75,7 +75,7 @@ class CheckoutCommand extends BaseCommand
 
 		$output->writeln('<info>✓</info>');
 
-		$this->saveMetadata($git, $destinationPath, $projectName);
+		$this->saveMetadata($git, $svn, $destinationPath, $projectName);
 
 		$output->writeln('<info>Enjoy working on your new project!</info>');
 	}
@@ -108,10 +108,11 @@ class CheckoutCommand extends BaseCommand
 		file_put_contents("{$destinationPath}/.gitignore", $gitignore);
 	}
 
-	protected function saveMetadata($git, $destinationPath, $projectName)
+	protected function saveMetadata($git, $svn, $destinationPath, $projectName)
 	{
 		$metadata = [
-			'lastCommitedRevision' => $git->getLastCommitHash(),
+			'lastPushedRevision' => $git->getLastCommitHash(),
+			'lastPushedRemoteRevision' => $svn->getCurrentRevision(),
 			'projectName' => $projectName
 		];
 

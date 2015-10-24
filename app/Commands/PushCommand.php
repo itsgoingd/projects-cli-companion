@@ -63,7 +63,7 @@ class PushCommand extends BaseCommand
 	protected function pushAll($commitsToPush, $gitignore, $svn, $git, $input, $output)
 	{
 		foreach ($commitsToPush as $i => $commit) {
-			$output->write("Pushing commit {$commit['revision']}... ");
+			$output->write("Pushing commit {$commit['shortRevision']}... ");
 			$output->write('checking out... ');
 
 			$git->checkout([ $commit['revision'] ]);
@@ -121,8 +121,9 @@ class PushCommand extends BaseCommand
 				}
 
 				$commit = [
-					'revision' => $matches['revision'],
-					'message'  => ''
+					'revision'      => $matches['revision'],
+					'shortRevision' => $git->getShortRevision($matches['revision']),
+					'message'       => ''
 				];
 			} elseif (strpos($line, 'Author:') !== 0 && strpos($line, 'Date:') !== 0 && trim($line) != '') {
 				$commit['message'] .= trim($line) . "\n";

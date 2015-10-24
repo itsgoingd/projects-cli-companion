@@ -12,6 +12,11 @@ class Git
 		return $this->execute('rev-parse', [ 'HEAD' ])[0];
 	}
 
+	public function getShortRevision($revision)
+	{
+		return $this->execute('rev-parse', [ 'short' => 7, $revision ])[0];
+	}
+
 	public function execute($command, $arguments = [])
 	{
 		$commandLine = "git $command";

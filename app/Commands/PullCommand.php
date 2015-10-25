@@ -27,20 +27,15 @@ class PullCommand extends BaseCommand
 
 		$output->write('<info>Retrieving remote changes... </info>');
 
-		$svnLog = $svn->log([ 'revision' => 'BASE:HEAD' ]);
-
-		$output->writeln('<info>✓</info>');
-
-		$output->write('<info>Processing remote changes... </info>');
-
-		$svnLog = $this->parseSvnLog($svnLog);
+		$svnLog = $svn->getLog('BASE');
+		array_shift($svnLog);
 
 		$output->writeln('<info>✓ (' . count($svnLog) . ' commits)</info>');
 		$output->writeln('');
 
 		foreach ($svnLog as $commit) {
 			$output->write("Importing commit {$commit['revision']}... ");
-			$output->write('downloading files... ');
+			$output->write('downloading... ');
 
 			$svn->up([ 'revision' => $commit['revision'], 'accept' => 'postpone' ]);
 
@@ -69,31 +64,5 @@ class PullCommand extends BaseCommand
 		foreach ($conflicts['filename'] as $fileName) {
 			$output->writeln("\t{$fileName}");
 		}
-	}
-
-	protected function parseSvnLog($input)
-	{
-		array_shift($input);
-
-		$log = [];
-
-		foreach ($input as $line) {
-			if ($line == '------------------------------------------------------------------------') {
-				$log[] = $item;
-			} elseif (preg_match('/^r(?<revision>\d+) \| (?<author>.+?) \| (?<date>.+?) \(.+?\) \| \d+ line(s)?$/', $line, $matches)) {
-				$item = [
-					'revision' => $matches['revision'],
-					'author'   => $matches['author'],
-					'date'     => strtotime($matches['date']),
-					'message'  => ''
-				];
-			} elseif ($line != '') {
-				$item['message'] .= $line . "\n";
-			}
-		}
-
-		array_shift($log);
-
-		return $log;
 	}
 }

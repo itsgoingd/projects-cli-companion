@@ -39,6 +39,12 @@ class CheckoutCommand extends BaseCommand
 				'u',
 				InputOption::VALUE_OPTIONAL,
 				'Projects username, defaults to current system username.'
+			)
+			->addOption(
+				'without-history',
+				null,
+				InputOption::VALUE_NONE,
+				'Disables importing of the full revisions history, imports only the latest revision.'
 			);
 	}
 
@@ -55,9 +61,10 @@ class CheckoutCommand extends BaseCommand
 		$svn = $this->getSvn($this->config, $input, $output);
 		$git = $this->getGit();
 
-		$output->write('<info>Downloading files... </info>');
+		$fullHistory = ! $input->getOption('without-history');
+		$latestRemoteRevision = $svn->getLatestRevision();
 
-		$svnOutput = $svn->checkout([ $repositoryUrl, $destinationPath ]);
+		$svnOutput = $svn->ls(); // sue svn ls to check connection
 
 		if (isset($svnOutput[0]) && strpos($svnOutput[0], 'svn: E670008:') === 0) {
 			$output->writeln('<error>Unable to connect to the svn repository, please check if the specified server, project and repository names are correct.</error>');
@@ -67,13 +74,45 @@ class CheckoutCommand extends BaseCommand
 			return;
 		}
 
-		$output->writeln('<info>✓</info>');
-
-		$output->write('<info>Initializing repository... </info>');
-
 		$this->createLocalGitRepository($git, $destinationPath);
 
-		$output->writeln('<info>✓</info>');
+		$output->write('<info>Pulling files... </info>');
+
+		if ($fullHistory) {
+			$output->writeln('');
+			$output->writeln('');
+
+			$svn->checkout([ 'revision' => 1, $repositoryUrl, $destinationPath ]);
+
+			$revisions = $svn->getLog();
+			$revisionsCount = count($revisions);
+
+			foreach ($revisions as $revision) {
+				$output->write("Pulling revision {$revision['revision']}/{$revisionsCount}... downloading... ");
+
+				$svn->up([ 'revision' => $revision['revision'] ]);
+
+				$output->write('committing... ');
+
+				$git->add([ '.' ]);
+
+				$message = "[IMPORT] [{$revision['author']}] {$revision['message']} (" . date('d.m.Y H:i', $revision['date']) . ')';
+
+				$git->commit([ 'message' => $message ]);
+
+				$output->writeln('✓');
+			}
+		} else {
+			$svn->checkout([ $repositoryUrl, $destinationPath ]);
+
+			$git->add([ '.' ]);
+
+			$git->commit([ 'message' => 'Initial import.' ]);
+
+			$output->writeln('<info>✓</info>');
+		}
+
+		$this->createDefaultGitignore($git, $destinationPath);
 
 		$this->saveMetadata($git, $svn, $destinationPath, $projectName);
 
@@ -83,15 +122,9 @@ class CheckoutCommand extends BaseCommand
 	protected function createLocalGitRepository($git, $destinationPath)
 	{
 		$git->init([ $destinationPath ]);
-
-		$this->createDefaultGitignore($destinationPath);
-
-		$git->add([ '.' ]);
-
-		$git->commit([ 'message' => 'Hello world' ]);
 	}
 
-	protected function createDefaultGitignore($destinationPath)
+	protected function createDefaultGitignore($git, $destinationPath)
 	{
 		if ($destinationPath[0] != '/') {
 			$destinationPath = getcwd() . "/{$destinationPath}";
@@ -106,6 +139,10 @@ class CheckoutCommand extends BaseCommand
 		$gitignore .= "\n.svn\n";
 
 		file_put_contents("{$destinationPath}/.gitignore", $gitignore);
+
+		$git->add([ '.gitignore' ]);
+
+		$git->commit([ 'message' => 'Updated gitignore.' ]);
 	}
 
 	protected function saveMetadata($git, $svn, $destinationPath, $projectName)

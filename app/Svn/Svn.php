@@ -30,6 +30,11 @@ class Svn
 		}
 	}
 
+	public function getLog($startRevision = 1, $endRevision = 'HEAD')
+	{
+		return $this->parseSvnLog($this->log([ 'revision' => "{$startRevision}:{$endRevision}" ]));
+	}
+
 	public function execute($command, $arguments = [])
 	{
 		$commandLine = "svn $command";
@@ -59,5 +64,29 @@ class Svn
 		exec($commandLine, $output);
 
 		return $output;
+	}
+
+	protected function parseSvnLog($input)
+	{
+		array_shift($input);
+
+		$log = [];
+
+		foreach ($input as $line) {
+			if ($line == '------------------------------------------------------------------------') {
+				$log[] = $item;
+			} elseif (preg_match('/^r(?<revision>\d+) \| (?<author>.+?) \| (?<date>.+?) \(.+?\) \| \d+ line(s)?$/', $line, $matches)) {
+				$item = [
+					'revision' => $matches['revision'],
+					'author'   => $matches['author'],
+					'date'     => strtotime($matches['date']),
+					'message'  => ''
+				];
+			} elseif ($line != '') {
+				$item['message'] .= $line . "\n";
+			}
+		}
+
+		return $log;
 	}
 }

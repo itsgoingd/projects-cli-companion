@@ -116,7 +116,8 @@ class CheckoutCommand extends BaseCommand
 
 		$this->saveMetadata($git, $svn, $destinationPath, $projectName);
 
-		$output->writeln('<info>Enjoy working on your new project!</info>');
+		$output->writeln('');
+		$output->writeln('<info>Good luck, have fun!</info>');
 	}
 
 	protected function createLocalGitRepository($git, $destinationPath)

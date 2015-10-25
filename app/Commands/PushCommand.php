@@ -53,7 +53,12 @@ class PushCommand extends BaseCommand
 
 		$web = $this->getWeb($this->config, $input, $output);
 
+		$output->writeln('');
+		$output->write('Updating tickets... ');
+
 		$this->postTicketsCommentsForCommits($web, $commitsToPush);
+
+		$output->writeln('✓');
 
 		$svn->up();
 
@@ -245,21 +250,25 @@ class PushCommand extends BaseCommand
 		$comments = [];
 
 		foreach ($commits as $commit) {
-			if (! preg_match('/(?<keyword>[A-Za-z]+)?\s*#(?<ticketId>\d+)/', $commit['message'], $matches)) {
+			if (! preg_match_all('/(?<keyword>[A-Za-z]+)?\s*#(?<ticketId>\d+)/', $commit['message'], $matches)) {
 				continue;
 			}
 
-			$ticketId = $matches['ticketId'];
+			foreach ($matches['ticketId'] as $i => $ticketId) {
+				$keyword = $matches['keyword'][$i];
 
-			if (! isset($comments[$ticketId])) {
-				$comments[$ticketId] = [ 'message' => '', 'status' => null ];
+				if (! isset($comments[$ticketId])) {
+					$comments[$ticketId] = [ 'message' => '', 'status' => null ];
+				}
+
+				if ($keyword == 'implementing' || $keyword == 'fixing') {
+					$comments[$ticketId]['status'] = 'progress';
+				} elseif ($keyword == 'implements' || $keyword == 'implemented' || $keyword == 'fixes' || $keyword == 'fixed') {
+					$comments[$ticketId]['status'] = 'done';
+				}
+
+				$comments[$ticketId]['message'] .= '- ' . trim($commit['message']) . "\n";
 			}
-
-			if ($matches['keyword'] == 'done' || $matches['keyword'] == 'fixed' || $matches['keyword'] == 'fixes') {
-				$comments[$ticketId]['status'] = 'done';
-			}
-
-			$comments[$ticketId]['message'] .= '- ' . $commit['message'] . "\n";
 		}
 
 		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);

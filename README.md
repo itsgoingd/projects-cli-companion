@@ -29,7 +29,9 @@ Use `push` command to push out changes from local GIT repository to remote SVN r
 as an argument. This command also respects `.gitignore` entries when commiting the files to SVN.
 
 You can also reference a ticket in a commit message using `#ticket_number` (eg. `Fixed broken layout (#42).`) and the commit
-message will be automatically posted as a comment in the ticket.
+message will be automatically posted as a comment in the ticket. Ticket status can also be changes via references, eg.
+`Working on new user login. (implementing #6)` would set the references ticket status to "in progress", and `Fixed code style
+(fixes #13)` would set the ticket status to "done".
 
 ## Licence
 

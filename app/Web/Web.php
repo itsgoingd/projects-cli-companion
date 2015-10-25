@@ -49,15 +49,52 @@ class Web
 	{
 		$this->login($this->username, $this->password);
 
-		if ($status == 'done') {
-			$status = 5;
+		$ticketTypeStatuses = [
+			'bug'    => [ 'progress' => 9,  'done' => 11, 'doneResolution' => 6 ],
+			'change' => [ 'progress' => 15, 'done' => 17, 'doneResolution' => 14 ],
+			'task'   => [ 'progress' => 3,  'done' => 5,  'doneResolution' => 1 ]
+		];
+
+		$statusId = $timesheetEntryId = $resolutionId = null;
+
+		if ($status && $type = $this->getTicketType($projectSlug, $ticketId)) {
+			$statusId = $ticketTypeStatuses[$type][$status];
+
+			if ($status == 'done') {
+				$timesheetEntryId = $this->getLastTimesheetEntryId($projectSlug, $ticketId);
+				$resolutionId = $ticketTypeStatuses[$type]['doneResolution'];
+			}
 		}
 
-		$this->request('post', "tickets/{$projectSlug}/{$ticketId}/posted-from-cli", [
-			'title'         => $title,
-			'new_status_id' => $status,
-			'comment'       => $message,
-			'comment_type'  => 'markdown'
+		$response = $this->request('post', "tickets/{$projectSlug}/{$ticketId}/posted-from-cli", [
+			'title'                          => $title,
+			'new_status_id'                  => $status,
+			'resolved_in_timesheet_entry_id' => $timesheetEntryId,
+			'resolution_id'                  => $resolutionId,
+			'comment'                        => $message,
+			'comment_type'                   => 'markdown'
 		]);
+	}
+
+	public function getTicketType($projectSlug, $ticketId)
+	{
+		$response = $this->request('get', "tickets/{$projectSlug}/{$ticketId}/request-from-cli");
+
+		$typesMap = [
+			'Bug'            => 'bug',
+			'Change request' => 'change',
+			'Task'           => 'task'
+		];
+
+		$webType = $response->filter('table')->eq(0)->filter('tr')->eq(5)->filter('td')->eq(1)->text();
+
+		return isset($typesMap[$webType]) ? $typesMap[$webType] : null;
+	}
+
+	public function getLastTimesheetEntryId($projectSlug, $ticketId)
+	{
+		$response = $this->request('get', "tickets/{$projectSlug}/{$ticketId}/request-from-cli");
+
+		return $response->filter('#resolved_in_timesheet_entry_id')->attr('value');
 	}
 }

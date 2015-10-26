@@ -16,7 +16,7 @@ class PullCommand extends BaseCommand
 				'username',
 				'u',
 				InputOption::VALUE_OPTIONAL,
-				'Projects username, defaults to current system username.'
+				'Projects username.'
 			);
 	}
 

@@ -38,7 +38,7 @@ class CheckoutCommand extends BaseCommand
 				'username',
 				'u',
 				InputOption::VALUE_OPTIONAL,
-				'Projects username, defaults to current system username.'
+				'Projects username.'
 			)
 			->addOption(
 				'without-history',
@@ -149,9 +149,10 @@ class CheckoutCommand extends BaseCommand
 	protected function saveMetadata($git, $svn, $destinationPath, $projectName)
 	{
 		$metadata = [
-			'lastPushedRevision' => $git->getLastCommitHash(),
+			'lastPushedRevision'       => $git->getLastCommitHash(),
 			'lastPushedRemoteRevision' => $svn->getCurrentRevision(),
-			'projectName' => $projectName
+			'projectName'              => $projectName,
+			'deploymentTargets'        => []
 		];
 
 		if ($destinationPath[0] != '/') {

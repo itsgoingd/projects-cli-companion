@@ -2,13 +2,23 @@
 
 class Svn
 {
-	protected $username;
+	protected $userName;
 	protected $password;
 
-	public function __construct($username = null, $password = null)
+	public function __construct($userName = null, $password = null)
 	{
-		$this->username = $username;
+		$this->userName = $userName;
 		$this->password = $password;
+	}
+
+	public function getUserName()
+	{
+		return $this->userName;
+	}
+
+	public function getPassword()
+	{
+		return $this->password;
 	}
 
 	public function __call($name, $arguments)
@@ -39,8 +49,8 @@ class Svn
 	{
 		$commandLine = "svn $command";
 
-		if ($this->username) {
-			$arguments['username'] = $this->username;
+		if ($this->userName) {
+			$arguments['username'] = $this->userName;
 		}
 
 		if ($this->password) {

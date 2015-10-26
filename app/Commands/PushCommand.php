@@ -5,6 +5,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use ProjectsCliCompanion\Deployment\TargetsRepository;
+
 class PushCommand extends BaseCommand
 {
 	protected function configure()
@@ -21,7 +23,7 @@ class PushCommand extends BaseCommand
 				'username',
 				'u',
 				InputOption::VALUE_OPTIONAL,
-				'Projects username, defaults to current system username.'
+				'Projects username.'
 			);
 	}
 
@@ -54,15 +56,18 @@ class PushCommand extends BaseCommand
 		$web = $this->getWeb($this->config, $input, $output);
 
 		$output->writeln('');
-		$output->write('Updating tickets... ');
+		$output->write('<info>Updating tickets... </info>');
 
 		$this->postTicketsCommentsForCommits($web, $commitsToPush);
 
-		$output->writeln('✓');
+		$output->writeln('<info>✓</info>');
+		$output->writeln('');
 
 		$svn->up();
 
 		$this->saveMetadata($git, $svn);
+
+		$this->deployOnPushTargets($svn, $output);
 	}
 
 	protected function pushAll($commitsToPush, $gitignore, $svn, $git, $input, $output)
@@ -275,6 +280,31 @@ class PushCommand extends BaseCommand
 
 		foreach ($comments as $ticketId => $comment) {
 			$web->postTicketComment($metadata['projectName'], $ticketId, '', $comment['message'], $comment['status']);
+		}
+	}
+
+	protected function deployOnPushTargets($svn, $output)
+	{
+		$targets = new TargetsRepository(getcwd() . '/.svn/.projectsCliCompanion');
+
+		$onPushTargets = array_filter($targets->all(), function($target)
+		{
+			return $target->deployOnPush;
+		});
+
+		if (! count($onPushTargets)) {
+			return;
+		}
+
+		$output->writeln("<info>Deploying...</info>");
+		$output->writeln('');
+
+		foreach ($onPushTargets as $target) {
+			$output->write("Deploying target \"{$target->name}\"... ");
+
+			$target->deploy($svn->getUserName(), $svn->getPassword());
+
+			$output->writeln('✓');
 		}
 	}
 }

@@ -13,11 +13,11 @@ class TargetsRepository
         $this->metadataPath = $metadataPath;
     }
 
-    public function add($name, $hostName, $userName, $path, $deployOnPush)
+    public function add($name, $hostName, $userName, $path, $environment, $deployOnPush)
     {
         $metadata = json_decode(file_get_contents($this->metadataPath), true);
 
-        $metadata['deploymentTargets'][] = compact('name', 'hostName', 'userName', 'path', 'deployOnPush');
+        $metadata['deploymentTargets'][] = compact('name', 'hostName', 'userName', 'path', 'environment', 'deployOnPush');
 
         file_put_contents($this->metadataPath, json_encode($metadata));
     }

@@ -6,14 +6,16 @@ class Target
     public $hostName;
     public $userName;
     public $path;
+    public $environment;
     public $deployOnPush;
 
     public function __construct(array $data)
     {
-        $this->name = $data['name'];
-        $this->hostName = $data['hostName'];
-        $this->userName = $data['userName'];
-        $this->path = $data['path'];
+        $this->name         = $data['name'];
+        $this->hostName     = $data['hostName'];
+        $this->userName     = $data['userName'];
+        $this->path         = $data['path'];
+        $this->environment  = $data['environment'];
         $this->deployOnPush = $data['deployOnPush'];
     }
 
@@ -24,7 +26,7 @@ class Target
             'svn --no-auth-cache --username ' . escapeshellarg($svnUserName) . ' --password ' . escapeshellarg($svnPassword) . ' up',
             'composer install',
             'bower install',
-            'php artisan migrate'
+            'php artisan migrate --env=' . escapeshellarg($this->environment)
         ];
 
         $remoteCommandLine = implode('; ', $remoteCommandLine);

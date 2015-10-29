@@ -30,11 +30,18 @@ class DeployAddCommand extends BaseCommand
 		});
 
 		$hostName = $this->getHelper('dialog')->ask($output, "Hostname:\n");
+
 		$userName = $this->getHelper('dialog')->ask($output, "Username:\n");
-		$path = $this->getHelper('dialog')->ask($output, "Absolute path to the site root:\n");
+
+		$path = $this->getHelper('dialog')->ask($output, "Site root:\n");
+
+		if (! $environment = $this->getHelper('dialog')->ask($output, "Environment: (development)\n")) {
+			$environment = 'development';
+		}
+
 		$deployOnPush = $this->getHelper('dialog')->askConfirmation($output, "Deploy automatically on push? (no)\n");
 
-		$targets->add($name, $hostName, $userName, $path, $deployOnPush);
+		$targets->add($name, $hostName, $userName, $path, $environment, $deployOnPush);
 
 		if ($this->getHelper('dialog')->askConfirmation($output, "Set up SSH public key authentification? (yes)\n")) {
 			exec('ssh-copy-id ' . escapeshellarg("{$userName}@{$hostName}"));

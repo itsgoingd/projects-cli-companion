@@ -29,13 +29,14 @@ class DeployListCommand extends BaseCommand
 				$target->hostName,
 				$target->userName,
 				$target->path,
+				$target->environment,
 				$target->deployOnPush ? 'yes' : 'no'
 			];
 		}
 
 		$table = new Table($output);
         $table
-            ->setHeaders([ 'Name', 'Hostname', 'Username', 'Path', 'Deploy on push'])
+            ->setHeaders([ 'Name', 'Hostname', 'Username', 'Path', 'Environment', 'Deploy on push'])
             ->setRows($rows);
         $table->render();
 	}

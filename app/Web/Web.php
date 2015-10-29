@@ -68,7 +68,7 @@ class Web
 
 		$response = $this->request('post', "tickets/{$projectSlug}/{$ticketId}/posted-from-cli", [
 			'title'                          => $title,
-			'new_status_id'                  => $status,
+			'new_status_id'                  => $statusId,
 			'resolved_in_timesheet_entry_id' => $timesheetEntryId,
 			'resolution_id'                  => $resolutionId,
 			'comment'                        => $message,

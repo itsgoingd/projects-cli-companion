@@ -9,6 +9,7 @@ class Web
 	protected $password;
 
 	protected $client;
+	protected $loggedIn = false;
 
 	public function __construct($serverName, $username = null, $password = null)
 	{
@@ -33,6 +34,10 @@ class Web
 
 	public function login($username, $password)
 	{
+		if ($this->loggedIn) {
+			return true;
+		}
+
 		$crawler = $this->request('post', 'login', [
 			'login'    => $username,
 			'password' => $password
@@ -43,11 +48,15 @@ class Web
 		if (count($alerts) && strpos($alerts->first()->text(), 'Invalid user name or password, please try again.') !== false) {
 			return false;
 		}
+
+		$this->loggedIn = true;
 	}
 
 	public function postTicketComment($projectSlug, $ticketId, $title, $message, $status = null)
 	{
 		$this->login($this->username, $this->password);
+
+		$ticketMetadata = $this->getTicketMetadata($projectSlug, $ticketId);
 
 		$ticketTypeStatuses = [
 			'bug'    => [ 'progress' => 9,  'done' => 11, 'doneResolution' => 6 ],
@@ -57,29 +66,45 @@ class Web
 
 		$statusId = $timesheetEntryId = $resolutionId = null;
 
-		if ($status && $type = $this->getTicketType($projectSlug, $ticketId)) {
+		if ($status) {
+			$type = $ticketMetadata['type'];
 			$statusId = $ticketTypeStatuses[$type][$status];
 
 			if ($status == 'done') {
-				$timesheetEntryId = $this->getLastTimesheetEntryId($projectSlug, $ticketId);
+				$timesheetEntryId = $ticketMetadata['lastTimesheetEntryId'];
 				$resolutionId = $ticketTypeStatuses[$type]['doneResolution'];
 			}
 		}
 
-		$response = $this->request('post', "tickets/{$projectSlug}/{$ticketId}/posted-from-cli", [
+		$request = [
 			'title'                          => $title,
 			'new_status_id'                  => $statusId,
 			'resolved_in_timesheet_entry_id' => $timesheetEntryId,
 			'resolution_id'                  => $resolutionId,
 			'comment'                        => $message,
 			'comment_type'                   => 'markdown'
-		]);
+		];
+
+		if ($ticketMetadata['returnToListing']) {
+			$request['return_to_listing'] = 1;
+		}
+
+		$response = $this->request('post', "tickets/{$projectSlug}/{$ticketId}/posted-from-cli", $request);
 	}
 
-	public function getTicketType($projectSlug, $ticketId)
+	public function getTicketMetadata($projectSlug, $ticketId)
 	{
 		$response = $this->request('get', "tickets/{$projectSlug}/{$ticketId}/request-from-cli");
 
+		return [
+			'type'                 => $this->getTicketType($response),
+			'lastTimesheetEntryId' => $response->filter('#resolved_in_timesheet_entry_id')->attr('value'),
+			'returnToListing'      => $response->filter('#return_to_listing')->attr('checked')
+		];
+	}
+
+	protected function getTicketType($response)
+	{
 		$typesMap = [
 			'Bug'            => 'bug',
 			'Change request' => 'change',
@@ -89,12 +114,5 @@ class Web
 		$webType = $response->filter('table')->eq(0)->filter('tr')->eq(5)->filter('td')->eq(1)->text();
 
 		return isset($typesMap[$webType]) ? $typesMap[$webType] : null;
-	}
-
-	public function getLastTimesheetEntryId($projectSlug, $ticketId)
-	{
-		$response = $this->request('get', "tickets/{$projectSlug}/{$ticketId}/request-from-cli");
-
-		return $response->filter('#resolved_in_timesheet_entry_id')->attr('value');
 	}
 }

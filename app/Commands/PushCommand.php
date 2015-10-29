@@ -80,6 +80,8 @@ class PushCommand extends BaseCommand
 
 			$output->write('committing... ');
 
+			$message = $commit['message'];
+
 			if ($i == count($commitsToPush) - 1) {
 				$message = $input->getArgument('workTime') . ' ' . $commit['message'];
 			}
@@ -87,7 +89,7 @@ class PushCommand extends BaseCommand
 			$this->addNewFilesToSvn($svn, $gitignore);
 			$this->removeDeletedFilesFromSvn();
 
-			$svn->commit([ '.', 'message' => $commit['message'] ]);
+			$svn->commit([ '.', 'message' => $message ]);
 
 			$output->writeln('✓');
 		}

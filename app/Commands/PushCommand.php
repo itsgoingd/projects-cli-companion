@@ -53,6 +53,10 @@ class PushCommand extends BaseCommand
 			$this->pushMerged($commitsToPush, $gitignore, $svn, $git, $input, $output);
 		}
 
+		$svn->up();
+
+		$this->saveMetadata($git, $svn);
+
 		$web = $this->getWeb($this->config, $input, $output);
 
 		$output->writeln('');
@@ -62,10 +66,6 @@ class PushCommand extends BaseCommand
 
 		$output->writeln('<info>✓</info>');
 		$output->writeln('');
-
-		$svn->up();
-
-		$this->saveMetadata($git, $svn);
 
 		$this->deployOnPushTargets($svn, $output);
 	}

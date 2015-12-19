@@ -198,7 +198,7 @@ class PushCommand extends BaseCommand
 
 	protected function removeDeletedFilesFromSvn()
 	{
-		exec('svn status | grep ^! | awk \'{print " --force "$2}\' | xargs svn rm');
+		exec('svn status | grep ^! | awk \'{print " --force "$2"@"}\' | xargs svn rm');
 	}
 
 	protected function loadGitignore()

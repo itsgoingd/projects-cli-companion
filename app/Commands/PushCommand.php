@@ -57,14 +57,6 @@ class PushCommand extends BaseCommand
 
 		$this->saveMetadata($git, $svn);
 
-		$web = $this->getWeb($this->config, $input, $output);
-
-		$output->writeln('');
-		$output->write('<info>Updating tickets... </info>');
-
-		$this->postTicketsCommentsForCommits($web, $commitsToPush);
-
-		$output->writeln('<info>✓</info>');
 		$output->writeln('');
 
 		$this->deployOnPushTargets($svn, $output);
@@ -250,39 +242,6 @@ class PushCommand extends BaseCommand
 		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
 
 		return $metadata['lastPushedRemoteRevision'];
-	}
-
-	protected function postTicketsCommentsForCommits($web, $commits)
-	{
-		$comments = [];
-
-		foreach ($commits as $commit) {
-			if (! preg_match_all('/(?<keyword>[A-Za-z]+)?\s*#(?<ticketId>\d+)/', $commit['message'], $matches)) {
-				continue;
-			}
-
-			foreach ($matches['ticketId'] as $i => $ticketId) {
-				$keyword = $matches['keyword'][$i];
-
-				if (! isset($comments[$ticketId])) {
-					$comments[$ticketId] = [ 'message' => '', 'status' => null ];
-				}
-
-				if ($keyword == 'implementing' || $keyword == 'fixing') {
-					$comments[$ticketId]['status'] = 'progress';
-				} elseif ($keyword == 'implements' || $keyword == 'implemented' || $keyword == 'fixes' || $keyword == 'fixed') {
-					$comments[$ticketId]['status'] = 'done';
-				}
-
-				$comments[$ticketId]['message'] .= '- ' . trim($commit['message']) . "\n";
-			}
-		}
-
-		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
-
-		foreach ($comments as $ticketId => $comment) {
-			$web->postTicketComment($metadata['projectName'], $ticketId, '', $comment['message'], $comment['status']);
-		}
 	}
 
 	protected function deployOnPushTargets($svn, $output)

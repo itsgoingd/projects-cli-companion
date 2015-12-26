@@ -6,6 +6,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use ProjectsCliCompanion\Deployment\TargetsRepository;
+use ProjectsCliCompanion\Git\Gitignore;
 
 class PushCommand extends BaseCommand
 {
@@ -45,7 +46,7 @@ class PushCommand extends BaseCommand
 		$output->writeln('<info>✓ (' . count($commitsToPush) . ' commits)</info>');
 		$output->writeln('');
 
-		$gitignore = $this->loadGitignore();
+		$gitignore = Gitignore::loadFromPath(getcwd());
 
 		if ($svn->getCurrentRevision() == $this->getLastPushedRemoteRevision()) {
 			$this->pushAll($commitsToPush, $gitignore, $svn, $git, $input, $output);
@@ -161,7 +162,7 @@ class PushCommand extends BaseCommand
 
 	protected function addFileToSvn($svn, $path, $gitignore)
 	{
-		if ($this->isPathIgnored($path, $gitignore)) {
+		if ($gitignore->isIgnored($path)) {
 			return;
 		}
 
@@ -191,40 +192,6 @@ class PushCommand extends BaseCommand
 	protected function removeDeletedFilesFromSvn()
 	{
 		exec('svn status | grep ^! | awk \'{print " --force "$2"@"}\' | xargs svn rm');
-	}
-
-	protected function loadGitignore()
-	{
-		$ignoredPaths = [];
-
-		$lines = explode("\n", file_get_contents(getcwd() . '/.gitignore'));
-
-		foreach ($lines as $line) {
-			if (trim($line) != '' && $line[0] != '#') {
-				$ignoredPaths[] = $line;
-			}
-		}
-
-		return $ignoredPaths;
-	}
-
-	protected function isPathIgnored($path, $gitignore)
-	{
-		foreach ($gitignore as $ignoredPath) {
-			if ($path == $ignoredPath) {
-				return true;
-			}
-
-			$regex = '#^' . str_replace([ '*', '#' ], [ '.*?', '\#' ], $ignoredPath) . '$#';
-
-			if (preg_match($regex, $path)) {
-				return true;
-			}
-		}
-
-		if ($path == '.git' || $path == '.gitignore') {
-			return true;
-		}
 	}
 
 	protected function saveMetadata($git, $svn)

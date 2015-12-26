@@ -24,9 +24,11 @@ class SetupCommand extends BaseCommand
 		$username = $this->getHelper('dialog')->ask($output, "Please enter your username (optional):\n");
 		$password = $this->getHelper('dialog')->askHiddenResponse($output, "Please enter your password (optional, note that password is stored in plaintext in the configuration file):\n");
 
-		$metadata = compact('serverName', 'username', 'password');
+		$this->config->set('serverName', $serverName);
+		$this->config->set('username', $username);
+		$this->config->setBinary('password', $password);
 
-		file_put_contents(getenv('HOME') . '/.projectsCliCompanion', json_encode($metadata));
+		$this->config->save();
 
 		$output->writeln('<info>All set up and ready to go!</info>');
 	}

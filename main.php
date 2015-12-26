@@ -7,7 +7,7 @@ use ProjectsCliCompanion\Config\Config;
 
 use Symfony\Component\Console\Application;
 
-$app = new Application();
+$app = new Application('Projects CLI companion', '1.0');
 
 $config = Config::loadDefault();
 

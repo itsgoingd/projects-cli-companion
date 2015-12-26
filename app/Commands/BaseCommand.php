@@ -28,7 +28,7 @@ abstract class BaseCommand extends Command
 	{
 		$username = $config->get('username', $input->getOption('username'));
 
-		if (! $password = $config->get('password')) {
+		if (! $password = $config->getBinary('password')) {
 			$password = $this->getHelper('dialog')->askHiddenResponse($output, 'Please enter your password:');
 		}
 

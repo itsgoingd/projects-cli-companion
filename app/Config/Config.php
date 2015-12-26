@@ -39,9 +39,19 @@ class Config
 		return isset($this->data[$key]) ? $this->data[$key] : $default;
 	}
 
+	public function getBinary($key)
+	{
+		return base64_decode($this->get($key));
+	}
+
 	public function set($key, $value)
 	{
 		$this->data[$key] = $value;
+	}
+
+	public function setBinary($key, $value)
+	{
+		return $this->set($key, base64_encode($value));
 	}
 
 	public function save()

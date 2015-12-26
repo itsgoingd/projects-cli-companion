@@ -9,7 +9,7 @@ use Symfony\Component\Console\Application;
 
 $app = new Application();
 
-$config = Config::load();
+$config = Config::loadDefault();
 
 $app->add(new Commands\CheckoutCommand($config));
 $app->add(new Commands\DeployCommand($config));

@@ -2,20 +2,36 @@
 
 class Config
 {
+	const VERSION = 1;
+
+	protected $configPath;
+
 	protected $data = [];
 
-	public function __construct(array $data = [])
+	public function __construct($configPath)
 	{
-		$this->data = $data;
+		$this->configPath = $configPath;
+
+		if (! file_exists($configPath)) {
+			$this->createDefault();
+		}
 	}
 
-	public static function load()
+	public static function loadDefault()
 	{
-		if (! $data = json_decode(file_get_contents(getenv('HOME') . '/.projectsCliCompanion'), true)) {
+		$config = new self(getenv('HOME') . '/.projectsCliCompanion');
+		$config->load();
+
+		return $config;
+	}
+
+	public function load()
+	{
+		if (! $data = json_decode(file_get_contents($this->configPath), true)) {
 			$data = [];
 		}
 
-		return new self($data);
+		$this->data = $data;
 	}
 
 	public function get($key, $default = null)
@@ -30,6 +46,15 @@ class Config
 
 	public function save()
 	{
-		file_put_contents(getenv('HOME') . '/.projectsCliCompanion', json_encode($this->data));
+		file_put_contents($this->configPath, json_encode($this->data));
+	}
+
+	protected function createDefault()
+	{
+		$this->data = [
+			'version' => static::VERSION
+		];
+
+		$this->save();
 	}
 }

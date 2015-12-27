@@ -1,12 +1,13 @@
 <?php namespace ProjectsCliCompanion\Commands;
 
+use ProjectsCliCompanion\Deployment\TargetsRepository;
+use ProjectsCliCompanion\Git\Gitignore;
+use ProjectsCliCompanion\Metadata\Metadata;
+
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-
-use ProjectsCliCompanion\Deployment\TargetsRepository;
-use ProjectsCliCompanion\Git\Gitignore;
 
 class PushCommand extends BaseCommand
 {
@@ -196,12 +197,12 @@ class PushCommand extends BaseCommand
 
 	protected function saveMetadata($git, $svn)
 	{
-		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
+		$metadata = Metadata::loadFromPath(getcwd());
 
-		$metadata['lastPushedRevision'] = $git->getLastCommitHash();
-		$metadata['lastPushedRemoteRevision'] = $svn->getCurrentRevision();
+		$metadata->set('lastPushedRevision', $git->getLastCommitHash());
+		$metadata->set('lastPushedRemoteRevision', $svn->getCurrentRevision());
 
-		file_put_contents(getcwd() . '/.svn/.projectsCliCompanion', json_encode($metadata));
+		$metadata->save();
 	}
 
 	protected function getLastPushedRemoteRevision()

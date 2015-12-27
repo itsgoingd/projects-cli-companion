@@ -44,9 +44,13 @@ class Config
 		return base64_decode($this->get($key));
 	}
 
-	public function set($key, $value)
+	public function set($key, $value = null)
 	{
-		$this->data[$key] = $value;
+		if (is_array($key)) {
+			$this->data = array_merge($this->data, $key);
+		} else {
+			$this->data[$key] = $value;
+		}
 	}
 
 	public function setBinary($key, $value)

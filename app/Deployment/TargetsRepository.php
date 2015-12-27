@@ -1,34 +1,31 @@
 <?php namespace ProjectsCliCompanion\Deployment;
 
+use ProjectsCliCompanion\Metadata\Metadata;
+
 class TargetsRepository
 {
-    protected $metadataPath;
+    protected $metadata;
 
-    public function __construct($metadataPath)
+    public function __construct(Metadata $metadata)
     {
-        if (! file_exists($metadataPath)) {
-            throw new \Exception('Metadata file not found.');
-        }
-
-        $this->metadataPath = $metadataPath;
+        $this->metadata = $metadata;
     }
 
     public function add($name, $hostName, $userName, $path, $environment, $deployOnPush)
     {
-        $metadata = json_decode(file_get_contents($this->metadataPath), true);
+        $deploymentTargets = $this->metadata->get('deploymentTargets', []);
 
-        $metadata['deploymentTargets'][] = compact('name', 'hostName', 'userName', 'path', 'environment', 'deployOnPush');
+        $deploymentTargets[] = compact('name', 'hostName', 'userName', 'path', 'environment', 'deployOnPush');
 
-        file_put_contents($this->metadataPath, json_encode($metadata));
+        $this->metadata->set('deploymentTargets', $deploymentTargets);
+        $this->metadata->save();
     }
 
     public function all()
     {
-        $metadata = json_decode(file_get_contents($this->metadataPath), true);
-
         $targets = [];
 
-        foreach ($metadata['deploymentTargets'] as $targetData) {
+        foreach ($this->metadata->get('deploymentTargets', []) as $targetData) {
             $targets[] = new Target($targetData);
         }
 
@@ -46,13 +43,14 @@ class TargetsRepository
 
     public function remove($name)
     {
-        $metadata = json_decode(file_get_contents($this->metadataPath), true);
+        $deploymentTargets = $this->metadata->get('deploymentTargets', []);
 
-        $metadata['deploymentTargets'] = array_filter($metadata['deploymentTargets'], function($targetData) use($name)
+        $deploymentTargets = array_filter($deploymentTargets, function($targetData) use($name)
         {
             return $targetData['name'] != $name;
         });
 
-        file_put_contents($this->metadataPath, json_encode($metadata));
+        $this->metadata->set('deploymentTargets', $deploymentTargets);
+        $this->metadata->save();
     }
 }

@@ -1,12 +1,13 @@
 <?php namespace ProjectsCliCompanion\Commands;
 
+use ProjectsCliCompanion\Deployment\TargetsRepository;
+use ProjectsCliCompanion\Metadata\Metadata;
+
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-
-use ProjectsCliCompanion\Deployment\TargetsRepository;
 
 class DeployListCommand extends BaseCommand
 {
@@ -19,7 +20,7 @@ class DeployListCommand extends BaseCommand
 
 	protected function execute(InputInterface $input, OutputInterface $output)
 	{
-		$targets = new TargetsRepository(getcwd() . '/.svn/.projectsCliCompanion');
+		$targets = new TargetsRepository(Metadata::loadFromPath(getcwd()));
 
 		$rows = [];
 

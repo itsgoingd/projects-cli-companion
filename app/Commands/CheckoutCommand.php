@@ -1,5 +1,7 @@
 <?php namespace ProjectsCliCompanion\Commands;
 
+use ProjectsCliCompanion\Metadata\Metadata;
+
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -148,17 +150,19 @@ class CheckoutCommand extends BaseCommand
 
 	protected function saveMetadata($git, $svn, $destinationPath, $projectName)
 	{
-		$metadata = [
-			'lastPushedRevision'       => $git->getLastCommitHash(),
-			'lastPushedRemoteRevision' => $svn->getCurrentRevision(),
-			'projectName'              => $projectName,
-			'deploymentTargets'        => []
-		];
-
 		if ($destinationPath[0] != '/') {
 			$destinationPath = getcwd() . "/{$destinationPath}";
 		}
 
-		file_put_contents("/{$destinationPath}/.svn/.projectsCliCompanion", json_encode($metadata));
+		$metadata = Metadata::loadFromPath($destinationPath);
+
+		$metadata->set([
+			'lastPushedRevision'       => $git->getLastCommitHash(),
+			'lastPushedRemoteRevision' => $svn->getCurrentRevision(),
+			'projectName'              => $projectName,
+			'deploymentTargets'        => []
+		]);
+
+		$metadata->save();
 	}
 }

@@ -1,11 +1,12 @@
 <?php namespace ProjectsCliCompanion\Commands;
 
+use ProjectsCliCompanion\Deployment\TargetsRepository;
+use ProjectsCliCompanion\Metadata\Metadata;
+
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-
-use ProjectsCliCompanion\Deployment\TargetsRepository;
 
 class DeployRemoveCommand extends BaseCommand
 {
@@ -23,7 +24,7 @@ class DeployRemoveCommand extends BaseCommand
 
 	protected function execute(InputInterface $input, OutputInterface $output)
 	{
-		$targets = new TargetsRepository(getcwd() . '/.svn/.projectsCliCompanion');
+		$targets = new TargetsRepository(Metadata::loadFromPath(getcwd()));
 
 		$name = $input->getArgument('target');
 

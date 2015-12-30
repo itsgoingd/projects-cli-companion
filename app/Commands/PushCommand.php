@@ -33,6 +33,7 @@ class PushCommand extends BaseCommand
 	{
 		$svn = $this->getSvn($this->config, $input, $output);
 		$git = $this->getGit();
+		$metadata = Metadata::loadFromPath(getcwd());
 
 		if ($svn->getCurrentRevision() != $svn->getLatestRevision()) {
 			$output->writeln('<error>Please use `projects pull` to pull in new remote changes first.</error>');
@@ -42,14 +43,14 @@ class PushCommand extends BaseCommand
 
 		$output->write('<info>Retrieving changes to push... </info>');
 
-		$commitsToPush = $this->getNotPushedCommits($git);
+		$commitsToPush = $this->getNotPushedCommits($metadata, $git);
 
 		$output->writeln('<info>✓ (' . count($commitsToPush) . ' commits)</info>');
 		$output->writeln('');
 
 		$gitignore = Gitignore::loadFromPath(getcwd());
 
-		if ($svn->getCurrentRevision() == $this->getLastPushedRemoteRevision()) {
+		if ($svn->getCurrentRevision() == $metadata->get('lastPushedRemoteRevision')) {
 			$this->pushAll($commitsToPush, $gitignore, $svn, $git, $input, $output);
 		} else {
 			$this->pushMerged($commitsToPush, $gitignore, $svn, $git, $input, $output);
@@ -57,11 +58,11 @@ class PushCommand extends BaseCommand
 
 		$svn->up();
 
-		$this->saveMetadata($git, $svn);
+		$this->saveMetadata($metadata, $git, $svn);
 
 		$output->writeln('');
 
-		$this->deployOnPushTargets($svn, $output);
+		$this->deployOnPushTargets($metadata, $svn, $output);
 	}
 
 	protected function pushAll($commitsToPush, $gitignore, $svn, $git, $input, $output)
@@ -109,10 +110,8 @@ class PushCommand extends BaseCommand
 		$output->writeln('✓');
 	}
 
-	protected function getNotPushedCommits($git)
+	protected function getNotPushedCommits($metadata, $git)
 	{
-		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
-
 		$gitLog = $git->log();
 
 		$commits = [];
@@ -122,7 +121,7 @@ class PushCommand extends BaseCommand
 			if (preg_match('/^commit (?<revision>.+)$/', $line, $matches)) {
 				$commits[] = $commit;
 
-				if ($matches['revision'] == $metadata['lastPushedRevision']) {
+				if ($matches['revision'] == $metadata->get('lastPushedRevision')) {
 					break;
 				}
 
@@ -195,26 +194,17 @@ class PushCommand extends BaseCommand
 		exec('svn status | grep ^! | awk \'{print " --force "$2"@"}\' | xargs svn rm');
 	}
 
-	protected function saveMetadata($git, $svn)
+	protected function saveMetadata($metadata, $git, $svn)
 	{
-		$metadata = Metadata::loadFromPath(getcwd());
-
 		$metadata->set('lastPushedRevision', $git->getLastCommitHash());
 		$metadata->set('lastPushedRemoteRevision', $svn->getCurrentRevision());
 
 		$metadata->save();
 	}
 
-	protected function getLastPushedRemoteRevision()
+	protected function deployOnPushTargets($metadata, $svn, $output)
 	{
-		$metadata = json_decode(file_get_contents(getcwd() . '/.svn/.projectsCliCompanion'), true);
-
-		return $metadata['lastPushedRemoteRevision'];
-	}
-
-	protected function deployOnPushTargets($svn, $output)
-	{
-		$targets = new TargetsRepository(getcwd() . '/.svn/.projectsCliCompanion');
+		$targets = new TargetsRepository($metadata);
 
 		$onPushTargets = array_filter($targets->all(), function($target)
 		{

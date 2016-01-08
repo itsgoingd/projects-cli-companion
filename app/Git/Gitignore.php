@@ -27,6 +27,8 @@ class Gitignore
 
 	public function isIgnored($path)
 	{
+		$path = rtrim($path, '/');
+
 		foreach ($this->defaultIgnoredPaths as $ignoredPath) {
 			if ($path === $ignoredPath) {
 				return true;

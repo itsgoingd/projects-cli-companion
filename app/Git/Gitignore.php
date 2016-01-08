@@ -34,13 +34,13 @@ class Gitignore
 		}
 
 		foreach ($this->excludedPaths as $excludedPath) {
-			if (preg_match('#' . str_replace('#', '\#', $excludedPath) . '#', $path)) {
+			if (preg_match("#{$ignoredPath}#", $path)) {
 				return false;
 			}
 		}
 
 		foreach ($this->ignoredPaths as $ignoredPath) {
-			if (preg_match('#' . str_replace('#', '\#', $ignoredPath) . '#', $path)) {
+			if (preg_match("#{$ignoredPath}#", $path)) {
 				return true;
 			}
 		}
@@ -80,7 +80,18 @@ class Gitignore
 			return;
 		}
 
-		$pattern = str_replace([ '**', '*' ], [ '.*?', '[^/]*?' ], $pattern);
+		// strip comment
+		$previousCharacter = null;
+		foreach (str_split($pattern) as $index => $character) {
+			if ($character == '#' && $previousCharacter != '\\') {
+				$pattern = substr($pattern, 0, $index - 1);
+				break;
+			}
+
+			$previousCharacter = $character;
+		}
+
+		$pattern = str_replace([ '.', '**', '*', '?' ], [ '\.', '.*?', '[^/]*?', '.' ], $pattern);
 		$pattern = ltrim($pattern, '/');
 
 		if ($pattern[0] == '!') {

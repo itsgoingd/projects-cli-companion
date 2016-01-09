@@ -26,6 +26,10 @@ class Git
 
 	public function isPathIgnored($path)
 	{
+		if ($path == '.git' || strpos($path, '.git/') === 0) {
+			return true;
+		}
+
 		$this->execute('check-ignore', [ 'q' => null, $path ]);
 
 		return ! $this->getLastReturnCode();

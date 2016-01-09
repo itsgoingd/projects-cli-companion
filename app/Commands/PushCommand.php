@@ -1,7 +1,6 @@
 <?php namespace ProjectsCliCompanion\Commands;
 
 use ProjectsCliCompanion\Deployment\TargetsRepository;
-use ProjectsCliCompanion\Git\Gitignore;
 use ProjectsCliCompanion\Metadata\Metadata;
 
 use Symfony\Component\Console\Input\InputArgument;
@@ -48,12 +47,10 @@ class PushCommand extends BaseCommand
 		$output->writeln('<info>✓ (' . count($commitsToPush) . ' commits)</info>');
 		$output->writeln('');
 
-		$gitignore = Gitignore::loadFromPath(getcwd());
-
 		if ($svn->getCurrentRevision() == $metadata->get('lastPushedRemoteRevision')) {
-			$this->pushAll($commitsToPush, $gitignore, $svn, $git, $input, $output);
+			$this->pushAll($commitsToPush, $svn, $git, $input, $output);
 		} else {
-			$this->pushMerged($commitsToPush, $gitignore, $svn, $git, $input, $output);
+			$this->pushMerged($commitsToPush, $svn, $git, $input, $output);
 		}
 
 		$svn->up();
@@ -65,7 +62,7 @@ class PushCommand extends BaseCommand
 		$this->deployOnPushTargets($metadata, $svn, $output);
 	}
 
-	protected function pushAll($commitsToPush, $gitignore, $svn, $git, $input, $output)
+	protected function pushAll($commitsToPush, $svn, $git, $input, $output)
 	{
 		foreach ($commitsToPush as $i => $commit) {
 			$output->write("Pushing commit {$commit['shortRevision']}... ");
@@ -81,7 +78,7 @@ class PushCommand extends BaseCommand
 				$message = $input->getArgument('workTime') . ' ' . $commit['message'];
 			}
 
-			$this->addNewFilesToSvn($svn, $gitignore);
+			$this->addNewFilesToSvn($svn, $git);
 			$this->removeDeletedFilesFromSvn();
 
 			$svn->commit([ '.', 'message' => $message ]);
@@ -92,7 +89,7 @@ class PushCommand extends BaseCommand
 		$git->checkout([ 'master' ]);
 	}
 
-	protected function pushMerged($commitsToPush, $gitignore, $svn, $git, $input, $output)
+	protected function pushMerged($commitsToPush, $svn, $git, $input, $output)
 	{
 		$message = $input->getArgument('workTime') . ' ';
 
@@ -102,7 +99,7 @@ class PushCommand extends BaseCommand
 
 		$output->write("Pushing commits... committing... ");
 
-		$this->addNewFilesToSvn($svn, $gitignore);
+		$this->addNewFilesToSvn($svn, $git);
 		$this->removeDeletedFilesFromSvn();
 
 		$svn->commit([ '.', 'message' => $message ]);
@@ -147,7 +144,7 @@ class PushCommand extends BaseCommand
 		return $commits;
 	}
 
-	protected function addNewFilesToSvn($svn, $gitignore)
+	protected function addNewFilesToSvn($svn, $git)
 	{
 		$svnStatus = $svn->status();
 
@@ -156,13 +153,13 @@ class PushCommand extends BaseCommand
 				continue;
 			}
 
-			$this->addFileToSvn($svn, $matches['path'], $gitignore);
+			$this->addFileToSvn($svn, $matches['path'], $git);
 		}
 	}
 
-	protected function addFileToSvn($svn, $path, $gitignore)
+	protected function addFileToSvn($svn, $path, $git)
 	{
-		if ($gitignore->isIgnored($path)) {
+		if ($git->isPathIgnored($path)) {
 			return;
 		}
 
@@ -184,7 +181,7 @@ class PushCommand extends BaseCommand
 					$path = rtrim($path, '/') . '/';
 				}
 
-				$this->addFileToSvn($svn, $path, $gitignore);
+				$this->addFileToSvn($svn, $path, $git);
 			}
 		}
 	}

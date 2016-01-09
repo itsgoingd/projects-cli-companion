@@ -28,7 +28,7 @@ class Git
 	{
 		$this->execute('check-ignore', [ 'q' => null, $path ]);
 
-		return $this->getLastReturnCode();
+		return ! $this->getLastReturnCode();
 	}
 
 	public function execute($command, $arguments = [])

@@ -97,6 +97,7 @@ class CheckoutCommand extends BaseCommand
 				$output->write('committing... ');
 
 				$git->add([ '.' ]);
+				$git->reset([ '.svn' ]);
 
 				$message = "[IMPORT] [{$revision['author']}] {$revision['message']} (" . date('d.m.Y H:i', $revision['date']) . ')';
 
@@ -108,6 +109,7 @@ class CheckoutCommand extends BaseCommand
 			$svn->checkout([ $repositoryUrl, $destinationPath ]);
 
 			$git->add([ '.' ]);
+			$git->reset([ '.svn' ]);
 
 			$git->commit([ 'message' => 'Initial import.' ]);
 
